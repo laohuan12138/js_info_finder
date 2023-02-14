@@ -90,6 +90,7 @@ js_list = []
 num = 0
 table = PrettyTable()
 table.field_names = ["id","Info_Name","Info_Value","From_Js_File"]
+is_show = False
 table.align = "l"
 
 def check_url(url,js_url):
@@ -120,18 +121,20 @@ def send(url):
 #    print(js_list)
 
 def send_js(url):
+    global rsp_raws
     try:
         rsp = requests.get(url, timeout=10, headers=headers, verify=False)
         rsp_raw = rsp.content.decode("utf-8")
-        rsp_raw = rsp_raw.replace(";",";\r\n").replace(",",",\r\n")
+        rsp_raws = rsp_raw.replace(";",";\r\n").replace(",",",\r\n")
 
     except:
         print("\033[31m[-] %s Request failed !\033[0m" % url)
 
-    regex_se(rsp_raw,url)
+    regex_se(rsp_raws,url)
 
 def regex_se(content,url):
     global num
+    global is_show
     str_table = []
     str_len = len(content)
 
@@ -143,7 +146,7 @@ def regex_se(content,url):
             regex_result = re.search(i[1],reg_cont,re.IGNORECASE)
             if regex_result:
                 match_start += regex_result.end() + 1
-
+                is_show = True
                 if regex_result.group() not in reg_list:
                     print("\033[32m [+] Found\033[0m"+"\033[31m {} \033[0m".format(i[0])+"\033[32m in {} \033[0m".format(url))
                     num += 1
@@ -155,16 +158,20 @@ def regex_se(content,url):
                     str_table.append(url)
                     table.add_row(str_table)
                 str_table.clear()
+    
             else:
                 break
 
 def print_table():
-    print(table.get_string())
-    date = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    with open(date+'.txt','a+') as f:
-        f.write(table.get_string())
+    if is_show:
+        print(table.get_string())
+        date = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        with open(date+'.txt','a+') as f:
+            f.write(table.get_string())
+        print("\033[32m [+] 结果保存到 {} ！\033[0m".format(date+'.txt'))
+    else:
+        print("\033[32m [!] 未发现敏感信息!\033[0m")
 
-    print("\033[32m [+] 结果保存到 {} ！\033[0m".format(date+'.txt'))
 
 def main():
     parser = optparse.OptionParser("python %prog -u http://127.0.0.1")
